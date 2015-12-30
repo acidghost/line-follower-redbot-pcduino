@@ -14,44 +14,44 @@ float Kp = 50, Ki = 0, Kd = 0;
 
 
 void setup() {
-    Serial.begin(9600);
+	Serial.begin(9600);
 }
 
 
 void loop() {
-    Serial.println("ready");
-    delay(5);
+	Serial.println("ready");
+	delay(5);
 
-    while (Serial.available() > 0) {
-        delay(3);
-        char c = Serial.read();
-        if (c == '\n') {
-            break;
-        } else {
-            incomingString += c;
-        }
-    }
+	while (Serial.available() > 0) {
+		delay(3);
+		char c = Serial.read();
+		if (c == '\n') {
+			break;
+		} else {
+			incomingString += c;
+		}
+	}
 
-    if (incomingString.equals("stop")) {
-        motors.brake();
-        exit(0);
-    }
+	if (incomingString.equals("stop")) {
+		motors.brake();
+		exit(0);
+	}
 
-    long errorTime = millis();
-    long iterationTime = errorTime - lastErrorTime;
+	long errorTime = millis();
+	long iterationTime = errorTime - lastErrorTime;
 
-    float error = atof(incomingString.c_str());
+	float error = atof(incomingString.c_str());
 
-    integral = (error / iterationTime) + integral;
-    derivative = (error - lastError) / iterationTime;
+	integral = (error / iterationTime) + integral;
+	derivative = (error - lastError) / iterationTime;
 
-    float correction = Kp * error + Ki * integral + Kd * derivative; 
+	float correction = Kp * error + Ki * integral + Kd * derivative; 
 
-    motors.leftMotor(baseSpeed - correction);
-    motors.rightMotor(baseSpeed + correction);
+	motors.leftMotor(baseSpeed - correction);
+	motors.rightMotor(baseSpeed + correction);
 
-    lastError = error;
-    lastErrorTime = errorTime;
+	lastError = error;
+	lastErrorTime = errorTime;
 
-    incomingString = "";
+	incomingString = "";
 }
