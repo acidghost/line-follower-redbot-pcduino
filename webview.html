@@ -1,0 +1,10 @@
+<html>
+  <body>
+    <script>
+      var ip = decodeURIComponent(window.location.search.substr(1) || "10.0.1.1:1337");
+      var img = document.createElement("IMG");
+      img.setAttribute("src", "http://" + ip);
+      document.body.appendChild(img);
+    </script>
+  </body>
+</html>

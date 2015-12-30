@@ -9,8 +9,9 @@ long lastErrorTime = millis();
 float integral = 0.0;
 float derivative = 0.0;
 
-unsigned int baseSpeed = 50;
-float Kp = 50, Ki = 0, Kd = 0;
+unsigned int rBaseSpeed = 68;
+unsigned int lBaseSpeed = 78;
+float Kp = 30, Ki = 0, Kd = 0;
 
 
 void setup() {
@@ -46,12 +47,15 @@ void loop() {
 	derivative = (error - lastError) / iterationTime;
 
 	float correction = Kp * error + Ki * integral + Kd * derivative; 
+	Serial.println(correction);
 
-	motors.leftMotor(baseSpeed - correction);
-	motors.rightMotor(baseSpeed + correction);
+	motors.leftMotor((int) (correction - lBaseSpeed));
+	motors.rightMotor((int) (rBaseSpeed + correction));
 
 	lastError = error;
 	lastErrorTime = errorTime;
 
 	incomingString = "";
+
+	delay(40);
 }
