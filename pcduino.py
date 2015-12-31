@@ -7,12 +7,13 @@ import serial
 import sys
 import getopt
 import socket
+import thread
 
 
-TRESH = 30
-counter = 0
-RED = (255,0,0)
-GREEN = (0,255,0)
+TRESH = 60
+AREA = 500
+RED = (0, 0, 255)
+GREEN = (0, 255, 0)
 WIDTH = 320
 HEIGHT = 240
 ROI_HEIGHT = 50
@@ -38,7 +39,7 @@ def get_centers(frame, verbose = False):
         area = cv2.contourArea(i)
         moments = cv2.moments(i)
 
-        if area > 200:
+        if area > AREA:
             if verbose: print 'Found area of %f' % area
             if moments['m00'] != 0.0:
                 if moments['m01'] != 0.0:
@@ -47,12 +48,24 @@ def get_centers(frame, verbose = False):
                     centers.append((cx, cy))
                     if verbose: print 'Found center in (%s, %s)' % (cx, cy)
 
-                    cv2.circle(frame, (cx, cy + 80), 4, RED, -1)
-                    cv2.circle(frame,(cx,cy+80), 8, GREEN, 0)
+                    y_offset = WIDTH / 2 - ROI_HEIGHT / 2
+                    cv2.circle(frame, (cx, cy + y_offset), 4, RED, -1)
+                    cv2.circle(frame,(cx,cy + y_offset), 8, GREEN, 0)
                     x,y,w,h = cv2.boundingRect(i)
-                    cv2.rectangle(frame, (x ,y+80), (x+w, y+h+80), GREEN, 2)
+                    cv2.rectangle(frame, (x ,y + y_offset), (x+w, y+h+y_offset), GREEN, 2)
 
     return centers, frame
+
+def start_server(callback):
+    server = socket.socket()
+    hp = (ip, port)
+    server.bind(hp)
+    server.listen(5)
+    print 'Waiting for connection on %s:%d' % hp
+    client, addr = server.accept()
+    print 'Connection from', addr
+    write_header(client)
+    callback(client)
 
 def write_header(client, boundary = '1337'):
     client.send("HTTP/1.0 200 OK\r\n" +
@@ -106,20 +119,14 @@ if __name__ == '__main__':
 
     client = None
     if stream:
-        server = socket.socket()
-        hp = (ip, port)
-        server.bind(hp)
-        server.listen(5)
-        print 'Waiting for connection on %s:%d' % hp
-        client, addr = server.accept()
-        print 'Connection from', addr
-        write_header(client)
+        def set_client(c): global client; client = c
+        thread.start_new_thread(start_server, (set_client, ))
 
     ser = serial.Serial(redbot_port, 9600)
 
     cap = cv2.VideoCapture(0)
-    ret = cap.set(3, WIDTH)
-    ret = cap.set(4, HEIGHT)
+    cap.set(cv.CV_CAP_PROP_FRAME_WIDTH, WIDTH)
+    cap.set(cv.CV_CAP_PROP_FRAME_HEIGHT, HEIGHT)
 
     try:
         while True:
@@ -140,7 +147,7 @@ if __name__ == '__main__':
 
                 ser.write(str(error) + '\r\n')
             else:
-                if verbose: print 'Recv:', line
+                print 'Recv:', line
     except KeyboardInterrupt:
         print 'Closing...'
         ser.write("stop" + "\r\n")
