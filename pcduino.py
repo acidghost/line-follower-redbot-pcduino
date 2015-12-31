@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import cv2
+import cv2.cv as cv
 import numpy as np
 import serial
 import sys
@@ -66,11 +67,10 @@ def write_header(client, boundary = '1337'):
             "--" + boundary + "\r\n")
 
 def write_frame(client, frame, boundary = '1337'):
-    buf = np.zeros((1, frame.shape[0] * frame.shape[1]))
-    ret = cv2.imencode('.jpg', frame, buf)
-    image_bytes = bytearray(buf)
+    ret = cv.EncodeImage('.jpeg', cv.fromarray(frame))
+    image_bytes = bytearray(np.asarray(ret))
     client.send("Content-type: image/jpeg\r\n")
-    client.send("Content-Length: " + len(image_bytes) + "\r\n\r\n")
+    client.send("Content-Length: %d\r\n\r\n" % len(image_bytes))
     client.send(image_bytes)
     client.send("\r\n--" + boundary + "\r\n")
 
